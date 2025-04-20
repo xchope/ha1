@@ -59,10 +59,16 @@ public class Calculator {
      * auf dem Bildschirm angezeigt. Falls hierbei eine Division durch Null auftritt, wird "Error" angezeigt.
      * @param operation "+" für Addition, "-" für Substraktion, "x" für Multiplikation, "/" für Division
      */
-    public void pressBinaryOperationKey(String operation)  {
-        latestValue = Double.parseDouble(screen);
+    public void pressBinaryOperationKey(String operation) {
+        if (!latestOperation.isEmpty()) {
+            pressEqualsKey();
+            latestValue = Double.parseDouble(screen);
+        } else {
+            latestValue = Double.parseDouble(screen);
+        }
         latestOperation = operation;
     }
+
 
     /**
      * Empfängt den Wert einer gedrückten unären Operationstaste, also eine der drei Operationen
@@ -117,17 +123,87 @@ public class Calculator {
      * Operation (ggf. inklusive letztem Operand) erneut auf den aktuellen Bildschirminhalt angewandt
      * und das Ergebnis direkt angezeigt.
      */
+    private double lastOperandForEqualsRepeat = Double.NaN;
+    private String latestOperationBeforeEquals = "";
+/* Hilfe durch KI (Code)
+
+ */
     public void pressEqualsKey() {
-        var result = switch(latestOperation) {
-            case "+" -> latestValue + Double.parseDouble(screen);
-            case "-" -> latestValue - Double.parseDouble(screen);
-            case "x" -> latestValue * Double.parseDouble(screen);
-            case "/" -> latestValue / Double.parseDouble(screen);
-            default -> throw new IllegalArgumentException();
-        };
-        screen = Double.toString(result);
-        if(screen.equals("Infinity")) screen = "Error";
-        if(screen.endsWith(".0")) screen = screen.substring(0,screen.length()-2);
-        if(screen.contains(".") && screen.length() > 11) screen = screen.substring(0, 10);
+        if (latestOperation.isEmpty()) {
+            if (!Double.isNaN(lastOperandForEqualsRepeat) && !latestOperationBeforeEquals.isEmpty()) {
+                double currentValue = Double.parseDouble(screen);
+                double result;
+                switch (latestOperationBeforeEquals) {
+                    case "+":
+                        result = currentValue + lastOperandForEqualsRepeat;
+                        break;
+                    case "-":
+                        result = currentValue - lastOperandForEqualsRepeat;
+                        break;
+                    case "x":
+                        result = currentValue * lastOperandForEqualsRepeat;
+                        break;
+                    case "/":
+                        if (lastOperandForEqualsRepeat == 0) {
+                            screen = "Error";
+                            return;
+                        }
+                        result = currentValue / lastOperandForEqualsRepeat;
+                        break;
+                    default:
+                        return;
+                }
+                screen = formatResult(result);
+                latestValue = Double.parseDouble(screen);
+            }
+            return;
+        }
+
+        double currentValue = Double.parseDouble(screen);
+        double result;
+        switch (latestOperation) {
+            case "+":
+                result = latestValue + currentValue;
+                break;
+            case "-":
+                result = latestValue - currentValue;
+                break;
+            case "x":
+                result = latestValue * currentValue;
+                break;
+            case "/":
+                if (currentValue == 0) {
+                    screen = "Error";
+                    return;
+                }
+                result = latestValue / currentValue;
+                break;
+            default:
+                throw new IllegalStateException("Unerwartete Operation: " + latestOperation);
+        }
+        screen = formatResult(result);
+        latestValue = Double.parseDouble(screen);
+        lastOperandForEqualsRepeat = currentValue;
+        latestOperationBeforeEquals = latestOperation;
+        latestOperation = "";
+    }
+    private String formatResult(double result) {
+        String formattedResult = Double.toString(result);
+        if (formattedResult.equals("Infinity") || formattedResult.equals("NaN")) {
+            return "Error";
+        }
+        if (formattedResult.endsWith(".0")) {
+            formattedResult = formattedResult.substring(0, formattedResult.length() - 2);
+        }
+        if (formattedResult.contains(".") && formattedResult.length() > 11) {
+            formattedResult = formattedResult.substring(0, 11);
+            if (formattedResult.endsWith(".")) {
+                formattedResult = formattedResult.substring(0, formattedResult.length() - 1);
+            }
+        } else if (!formattedResult.contains(".") && formattedResult.length() > 10) {
+            formattedResult = formattedResult.substring(0, 10);
+        }
+        return formattedResult;
     }
 }
+
