@@ -90,5 +90,20 @@ class CalculatorTest {
 
 
     //TODO hier weitere Tests erstellen
+
+    @Test
+    @DisplayName("should allow multiple key presses (123) one after another")
+    void testMultipleDigitKeyPresses() {
+        Calculator calc = new Calculator();
+
+        calc.pressDigitKey(1);
+        calc.pressDigitKey(2);
+        calc.pressDigitKey(3);
+
+        String expected = "123";
+        String actual = calc.readScreen();
+
+        assertEquals(expected, actual);
+    }
 }
 
